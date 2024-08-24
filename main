@@ -1,0 +1,109 @@
+import os
+import sys
+
+
+from openpyxl import Workbook
+from datetime import datetime
+from datetime import timedelta
+from openpyxl.utils.dataframe import dataframe_to_rows
+import time
+from sqlalchemy import create_engine
+import pandas as pd
+from pathlib import Path
+
+
+def get_data(start_date, to_date, engine, i):
+    # Ниже вставляем SQL запрос и во внутрь запроса вставлем переменные i, start_date и to_date
+    query = f''' 
+    '''
+    dtype = {'[обработка большого числа]': str}
+    with engine.connect() as conn:
+        result = pd.read_sql(
+            query,
+            con=engine,
+            dtype=dtype
+        )
+        if result is None:
+            sys.exit()
+        return result
+def save_data(start_date, data, i):
+    workbook = Workbook()
+    sheet = workbook.active
+    print(f"Сохраняем файл {start_date}.xlsx")
+    find_month = str(f'{start_date}')
+    month = {1: 'январь', 2: 'февраль', 3: 'март', 4: 'апрель', 5: 'май', 6: 'июнь', 7: 'июль', 8: 'август', 9: 'сентябрь', 10: 'октябрь', 11: 'ноябрь', 12: 'декабрь'}
+    fin = month[int(find_month[5:7])]
+    for row in dataframe_to_rows(data):
+        sheet.append(row)
+    # Удаление первого столбца
+    sheet.delete_cols(1)
+    sheet.delete_rows(2)
+    # Сохраняем файл
+    directory = f"[директория, куда сохраняем]/{i}/{fin}"
+    file_path = os.path.join(directory, f"{start_date}.xlsx")
+    workbook.save(file_path)
+    print("Файл успешно сохранен.")
+
+def machina():
+    print('Давайте подключимся к MySQL')
+    url = "mysql+mysqlconnector://"  #указываем логин,
+    # пароль,
+    # айпи адрес и название базы
+    engine = create_engine(url, echo=False)
+    if engine is None:
+        sys.exit()
+    else:
+        print("Соединение установлено")
+        print(f"Привет, мы подключаемся")
+        return engine
+
+
+if __name__ == '__main__':
+    array = {
+
+     }
+    start_date_str = '2023-01-01'
+    to_date_str = '2023-12-31'
+    for key, value in array.items():
+        #создаем дерикторию перевозчика
+        new_directory = f"C:/Users/{value}"
+        path = Path(new_directory)
+        if not path.is_dir():
+            path.mkdir(parents=True)
+            print(f"Директория {value} успешно создана")
+        for i in range(1, 13):
+            month = {1: 'январь', 2: 'февраль', 3: 'март', 4: 'апрель', 5: 'май', 6: 'июнь', 7: 'июль', 8: 'август', 9: 'сентябрь', 10: 'октябрь', 11: 'ноябрь', 12: 'декабрь'}
+            month_dir = f"C:/Users/{value}/{month[i]}"
+            path = Path(month_dir)
+            path.mkdir(parents=True)
+            print(f"Папки с месяцами успешно созданы")
+        # Устанавливаем соединение с базой данных
+        engine = machina()
+        if engine is None:
+            raise ValueError("Соединение с базой данных не установлено")
+        # вводим дата начала
+        start_date = None
+        to_date = None
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            to_date = datetime.strptime(to_date_str, '%Y-%m-%d').date()
+            print(f"Скачиваем данные с {start_date} по {to_date}")
+        except ValueError:
+            print("Некорректный формат даты.")
+            sys.exit()
+        if engine:
+            while start_date <= to_date:
+                first_date = start_date
+                second_date = start_date + timedelta(days=1)
+                data = get_data(first_date, second_date, engine, key)
+                save_data(start_date, data, value)
+                print(f"файл сохранен {start_date}.xlsx")
+                start_date = start_date + timedelta(days=1)
+                print(f"Следующая дата {start_date}")
+                time.sleep(0.5)
+
+
+
+
+
+
